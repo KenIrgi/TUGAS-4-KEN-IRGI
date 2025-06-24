@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Grafis 2D</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        
+        .container {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background-color: #e8e8e8;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .section {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        
+        .section h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .color-picker {
+            width: 50px;
+            height: 25px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .slider {
+            flex: 1;
+        }
+        
+        .transform-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .transform-input {
+            width: 60px;
+            padding: 2px;
+            border: 1px solid #ccc;
+        }
+        
+        .btn {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .btn:hover {
+            background-color: #45a049;
+        }
+        
+        .btn-secondary {
+            background-color: #008CBA;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #007B9A;
+        }
+        
+        .btn-danger {
+            background-color: #f44336;
+        }
+        
+        .btn-danger:hover {
+            background-color: #da190b;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+            position: relative;
+        }
+        
+        #canvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        .status {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .object-list {
+            max-height: 100px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 5px;
+            background-color: white;
+        }
+        
+        .object-item {
+            padding: 2px 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .object-item:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .object-item.selected {
+            background-color: #007CBA;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Pilih Alat Gambar -->
+            <div class="section">
+                <h3>Pilih Alat Gambar</h3>
+                <div class="radio-group">
+                    <div class="radio-item">
+                        <input type="radio" id="titik" name="tool" value="titik" checked>
+                        <label for="titik">Titik</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="garis" name="tool" value="garis">
+                        <label for="garis">Garis</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="persegi" name="tool" value="persegi">
+                        <label for="persegi">Persegi</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="ellipse" name="tool" value="ellipse">
+                        <label for="ellipse">Ellipse</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Warna & Ketebalan -->
+            <div class="section">
+                <h3>Warna & Ketebalan</h3>
+                <div style="margin-bottom: 10px;">
+                    <input type="color" id="colorPicker" class="color-picker" value="#000000">
+                    <label for="colorPicker" style="margin-left: 10px;">Pilih Warna</label>
+                </div>
+                <div class="slider-container">
+                    <label>Ketebalan:</label>
+                    <input type="range" id="thickness" class="slider" min="1" max="10" value="2">
+                    <span id="thicknessValue">2</span>
+                </div>
+            </div>
+            
+            <!-- Daftar Objek -->
+            <div class="section">
+                <h3>Daftar Objek</h3>
+                <div class="object-list" id="objectList"></div>
+                <button class="btn btn-danger" onclick="deleteSelectedObject()" style="margin-top: 5px;">Hapus Objek</button>
+            </div>
+            
+            <!-- Transformasi -->
+            <div class="section">
+                <h3>Transformasi</h3>
+                <div class="transform-row">
+                    <label>Translasi (dx,dy):</label>
+                    <input type="number" id="translateX" class="transform-input" value="0">
+                    <input type="number" id="translateY" class="transform-input" value="0">
+                    <button class="btn" onclick="applyTranslation()">Translasi</button>
+                </div>
+                <div class="transform-row">
+                    <label>Rotasi (derajat):</label>
+                    <input type="number" id="rotation" class="transform-input" value="0">
+                    <button class="btn" onclick="applyRotation()">Rotasi</button>
+                </div>
+                <div class="transform-row">
+                    <label>Skala (sx,sy):</label>
+                    <input type="number" id="scaleX" class="transform-input" value="1" step="0.1">
+                    <input type="number" id="scaleY" class="transform-input" value="1" step="0.1">
+                    <button class="btn" onclick="applyScaling()">Skala</button>
+                </div>
+            </div>
+            
+            <!-- Windowing & Clipping -->
+            <div class="section">
+                <h3>Windowing & Clipping</h3>
+                <button class="btn btn-secondary" onclick="toggleWindowingMode()">Mode Windowing</button>
+                <button class="btn btn-secondary" onclick="clipObjects()" style="margin-top: 5px;">Clip Objek Windowing</button>
+            </div>
+        </div>
+        
+        <!-- Canvas Area -->
+        <div class="canvas-container">
+            <canvas id="canvas" width="800" height="600"></canvas>
+            <div class="status" id="status">Posisi mouse: (-1, 423)</div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+        let objects = [];
+        let selectedObject = null;
+        let isDrawing = false;
+        let startPoint = null;
+        let currentTool = 'titik';
+        let windowingMode = false;
+        let windowRect = null;
+        
+        // Initialize
+        document.getElementById('thickness').addEventListener('input', function() {
+            document.getElementById('thicknessValue').textContent = this.value;
+        });
+        
+        // Tool selection
+        document.querySelectorAll('input[name="tool"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                currentTool = this.value;
+                canvas.style.cursor = 'crosshair';
+            });
+        });
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', handleMouseDown);
+        canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('mouseup', handleMouseUp);
+        
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            if (windowingMode) {
+                startPoint = {x, y};
+                isDrawing = true;
+                return;
+            }
+            
+            if (currentTool === 'titik') {
+                createPoint(x, y);
+            } else {
+                startPoint = {x, y};
+                isDrawing = true;
+            }
+        }
+        
+        function handleMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            document.getElementById('status').textContent = `Posisi mouse: (${Math.round(x)}, ${Math.round(y)})`;
+            
+            if (isDrawing) {
+                redrawCanvas();
+                drawPreview(x, y);
+            }
+        }
+        
+        function handleMouseUp(e) {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            if (windowingMode) {
+                createWindow(startPoint.x, startPoint.y, x, y);
+                windowingMode = false;
+                canvas.style.cursor = 'crosshair';
+            } else {
+                createShape(startPoint.x, startPoint.y, x, y);
+            }
+            
+            isDrawing = false;
+            startPoint = null;
+        }
+        
+        function createPoint(x, y) {
+            const point = {
+                type: 'titik',
+                x: x,
+                y: y,
+                color: document.getElementById('colorPicker').value,
+                thickness: parseInt(document.getElementById('thickness').value),
+                id: Date.now()
+            };
+            objects.push(point);
+            updateObjectList();
+            redrawCanvas();
+        }
+        
+        function createShape(x1, y1, x2, y2) {
+            const color = document.getElementById('colorPicker').value;
+            const thickness = parseInt(document.getElementById('thickness').value);
+            
+            let shape = {
+                color: color,
+                thickness: thickness,
+                id: Date.now()
+            };
+            
+            switch(currentTool) {
+                case 'garis':
+                    shape.type = 'garis';
+                    shape.x1 = x1;
+                    shape.y1 = y1;
+                    shape.x2 = x2;
+                    shape.y2 = y2;
+                    break;
+                case 'persegi':
+                    shape.type = 'persegi';
+                    shape.x = Math.min(x1, x2);
+                    shape.y = Math.min(y1, y2);
+                    shape.width = Math.abs(x2 - x1);
+                    shape.height = Math.abs(y2 - y1);
+                    break;
+                case 'ellipse':
+                    shape.type = 'ellipse';
+                    shape.cx = (x1 + x2) / 2;
+                    shape.cy = (y1 + y2) / 2;
+                    shape.rx = Math.abs(x2 - x1) / 2;
+                    shape.ry = Math.abs(y2 - y1) / 2;
+                    break;
+            }
+            
+            objects.push(shape);
+            updateObjectList();
+            redrawCanvas();
+        }
+        
+        function drawPreview(x, y) {
+            if (!startPoint) return;
+            
+            ctx.strokeStyle = document.getElementById('colorPicker').value;
+            ctx.lineWidth = parseInt(document.getElementById('thickness').value);
+            ctx.setLineDash([5, 5]);
+            
+            if (windowingMode) {
+                ctx.strokeRect(
+                    Math.min(startPoint.x, x),
+                    Math.min(startPoint.y, y),
+                    Math.abs(x - startPoint.x),
+                    Math.abs(y - startPoint.y)
+                );
+            } else {
+                switch(currentTool) {
+                    case 'garis':
+                        ctx.beginPath();
+                        ctx.moveTo(startPoint.x, startPoint.y);
+                        ctx.lineTo(x, y);
+                        ctx.stroke();
+                        break;
+                    case 'persegi':
+                        ctx.strokeRect(
+                            Math.min(startPoint.x, x),
+                            Math.min(startPoint.y, y),
+                            Math.abs(x - startPoint.x),
+                            Math.abs(y - startPoint.y)
+                        );
+                        break;
+                    case 'ellipse':
+                        const cx = (startPoint.x + x) / 2;
+                        const cy = (startPoint.y + y) / 2;
+                        const rx = Math.abs(x - startPoint.x) / 2;
+                        const ry = Math.abs(y - startPoint.y) / 2;
+                        ctx.beginPath();
+                        ctx.ellipse(cx, cy, rx, ry, 0, 0, 2 * Math.PI);
+                        ctx.stroke();
+                        break;
+                }
+            }
+            ctx.setLineDash([]);
+        }
+        
+        function redrawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            objects.forEach(obj => {
+                drawObject(obj);
+            });
+            
+            if (windowRect) {
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([10, 5]);
+                ctx.strokeRect(windowRect.x, windowRect.y, windowRect.width, windowRect.height);
+                ctx.setLineDash([]);
+            }
+        }
+        
+        function drawObject(obj) {
+            ctx.save();
+            
+            // Get center point for transformations
+            let centerX, centerY;
+            switch(obj.type) {
+                case 'titik':
+                    centerX = obj.x;
+                    centerY = obj.y;
+                    break;
+                case 'garis':
+                    centerX = (obj.x1 + obj.x2) / 2;
+                    centerY = (obj.y1 + obj.y2) / 2;
+                    break;
+                case 'persegi':
+                    centerX = obj.x + obj.width / 2;
+                    centerY = obj.y + obj.height / 2;
+                    break;
+                case 'ellipse':
+                    centerX = obj.cx;
+                    centerY = obj.cy;
+                    break;
+            }
+            
+            // Apply transformations
+            ctx.translate(centerX, centerY);
+            
+            if (obj.rotation) {
+                ctx.rotate(obj.rotation);
+            }
+            
+            if (obj.scaleX || obj.scaleY) {
+                ctx.scale(obj.scaleX || 1, obj.scaleY || 1);
+            }
+            
+            ctx.translate(-centerX, -centerY);
+            
+            ctx.strokeStyle = obj.color;
+            ctx.fillStyle = obj.color;
+            ctx.lineWidth = obj.thickness;
+            
+            switch(obj.type) {
+                case 'titik':
+                    ctx.beginPath();
+                    ctx.arc(obj.x, obj.y, obj.thickness, 0, 2 * Math.PI);
+                    ctx.fill();
+                    break;
+                case 'garis':
+                    ctx.beginPath();
+                    ctx.moveTo(obj.x1, obj.y1);
+                    ctx.lineTo(obj.x2, obj.y2);
+                    ctx.stroke();
+                    break;
+                case 'persegi':
+                    ctx.strokeRect(obj.x, obj.y, obj.width, obj.height);
+                    break;
+                case 'ellipse':
+                    ctx.beginPath();
+                    ctx.ellipse(obj.cx, obj.cy, obj.rx, obj.ry, 0, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    break;
+            }
+            
+            ctx.restore();
+        }
+        
+        function updateObjectList() {
+            const list = document.getElementById('objectList');
+            list.innerHTML = '';
+            
+            objects.forEach((obj, index) => {
+                const item = document.createElement('div');
+                item.className = 'object-item';
+                item.textContent = `${obj.type.charAt(0).toUpperCase() + obj.type.slice(1)} ${index + 1}`;
+                item.onclick = () => selectObject(obj, item);
+                list.appendChild(item);
+            });
+        }
+        
+        function selectObject(obj, element) {
+            document.querySelectorAll('.object-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            selectedObject = obj;
+        }
+        
+        function deleteSelectedObject() {
+            if (selectedObject) {
+                const index = objects.indexOf(selectedObject);
+                if (index > -1) {
+                    objects.splice(index, 1);
+                    selectedObject = null;
+                    updateObjectList();
+                    redrawCanvas();
+                }
+            }
+        }
+        
+        function applyTranslation() {
+            if (!selectedObject) {
+                alert('Pilih objek terlebih dahulu!');
+                return;
+            }
+            
+            const dx = parseFloat(document.getElementById('translateX').value) || 0;
+            const dy = parseFloat(document.getElementById('translateY').value) || 0;
+            
+            switch(selectedObject.type) {
+                case 'titik':
+                    selectedObject.x += dx;
+                    selectedObject.y += dy;
+                    break;
+                case 'garis':
+                    selectedObject.x1 += dx;
+                    selectedObject.y1 += dy;
+                    selectedObject.x2 += dx;
+                    selectedObject.y2 += dy;
+                    break;
+                case 'persegi':
+                    selectedObject.x += dx;
+                    selectedObject.y += dy;
+                    break;
+                case 'ellipse':
+                    selectedObject.cx += dx;
+                    selectedObject.cy += dy;
+                    break;
+            }
+            
+            redrawCanvas();
+        }
+        
+        function applyRotation() {
+            if (!selectedObject) {
+                alert('Pilih objek terlebih dahulu!');
+                return;
+            }
+            
+            const angle = parseFloat(document.getElementById('rotation').value) || 0;
+            const rad = angle * Math.PI / 180;
+            
+            // Add rotation to object or initialize if not exists
+            if (!selectedObject.rotation) {
+                selectedObject.rotation = 0;
+            }
+            selectedObject.rotation += rad;
+            
+            redrawCanvas();
+        }
+        
+        function applyScaling() {
+            if (!selectedObject) {
+                alert('Pilih objek terlebih dahulu!');
+                return;
+            }
+            
+            const sx = parseFloat(document.getElementById('scaleX').value) || 1;
+            const sy = parseFloat(document.getElementById('scaleY').value) || 1;
+            
+            // Initialize scale if not exists
+            if (!selectedObject.scaleX) selectedObject.scaleX = 1;
+            if (!selectedObject.scaleY) selectedObject.scaleY = 1;
+            
+            // Apply scaling
+            selectedObject.scaleX *= sx;
+            selectedObject.scaleY *= sy;
+            
+            redrawCanvas();
+        }
+        
+        function toggleWindowingMode() {
+            windowingMode = !windowingMode;
+            canvas.style.cursor = windowingMode ? 'crosshair' : 'crosshair';
+            
+            const btn = event.target;
+            if (windowingMode) {
+                btn.textContent = 'Batalkan Windowing';
+                btn.style.backgroundColor = '#f44336';
+            } else {
+                btn.textContent = 'Mode Windowing';
+                btn.style.backgroundColor = '#008CBA';
+            }
+        }
+        
+        function createWindow(x1, y1, x2, y2) {
+            windowRect = {
+                x: Math.min(x1, x2),
+                y: Math.min(y1, y2),
+                width: Math.abs(x2 - x1),
+                height: Math.abs(y2 - y1)
+            };
+            
+            // Change color of objects inside window
+            objects.forEach(obj => {
+                if (isObjectInWindow(obj)) {
+                    obj.originalColor = obj.color;
+                    obj.color = '#ff0000'; // Red color for windowed objects
+                }
+            });
+            
+            redrawCanvas();
+        }
+        
+        function isObjectInWindow(obj) {
+            if (!windowRect) return false;
+            
+            const winLeft = windowRect.x;
+            const winRight = windowRect.x + windowRect.width;
+            const winTop = windowRect.y;
+            const winBottom = windowRect.y + windowRect.height;
+            
+            switch(obj.type) {
+                case 'titik':
+                    return obj.x >= winLeft && obj.x <= winRight &&
+                           obj.y >= winTop && obj.y <= winBottom;
+                
+                case 'garis':
+                    // Check if any part of the line is inside the window
+                    return (obj.x1 >= winLeft && obj.x1 <= winRight &&
+                            obj.y1 >= winTop && obj.y1 <= winBottom) ||
+                           (obj.x2 >= winLeft && obj.x2 <= winRight &&
+                            obj.y2 >= winTop && obj.y2 <= winBottom) ||
+                           // Check if line crosses the window
+                           (Math.min(obj.x1, obj.x2) <= winRight && Math.max(obj.x1, obj.x2) >= winLeft &&
+                            Math.min(obj.y1, obj.y2) <= winBottom && Math.max(obj.y1, obj.y2) >= winTop);
+                
+                case 'persegi':
+                    // Check if rectangle overlaps with window
+                    return obj.x < winRight && obj.x + obj.width > winLeft &&
+                           obj.y < winBottom && obj.y + obj.height > winTop;
+                
+                case 'ellipse':
+                    // Check if ellipse overlaps with window (simplified - check bounding box)
+                    const ellipseLeft = obj.cx - obj.rx;
+                    const ellipseRight = obj.cx + obj.rx;
+                    const ellipseTop = obj.cy - obj.ry;
+                    const ellipseBottom = obj.cy + obj.ry;
+                    
+                    return ellipseLeft < winRight && ellipseRight > winLeft &&
+                           ellipseTop < winBottom && ellipseBottom > winTop;
+            }
+            return false;
+        }
+        
+        function clipObjects() {
+            if (!windowRect) {
+                alert('Buat window terlebih dahulu!');
+                return;
+            }
+            
+            console.log('Before clipping:', objects.length, 'objects');
+            console.log('Window rect:', windowRect);
+            
+            // Keep only objects that are inside the window (clip objects outside window)
+            const originalLength = objects.length;
+            objects = objects.filter(obj => {
+                const inWindow = isObjectInWindow(obj);
+                console.log(`Object ${obj.type} at (${obj.x || obj.x1 || obj.cx}, ${obj.y || obj.y1 || obj.cy}) - inWindow: ${inWindow}`);
+                
+                if (inWindow && obj.originalColor) {
+                    // This object was windowed, restore original color and keep it
+                    obj.color = obj.originalColor;
+                    delete obj.originalColor;
+                    return true; // Keep windowed objects
+                } else if (inWindow) {
+                    // Object is in window but wasn't marked as windowed, keep it anyway
+                    return true;
+                }
+                return false; // Remove objects outside window (clipping)
+            });
+            
+            console.log('After clipping:', objects.length, 'objects');
+            console.log('Removed:', originalLength - objects.length, 'objects');
+            
+            windowRect = null;
+            selectedObject = null;
+            updateObjectList();
+            redrawCanvas();
+            
+            // Reset windowing mode button
+            const windowingBtn = document.querySelector('button[onclick="toggleWindowingMode()"]');
+            windowingBtn.textContent = 'Mode Windowing';
+            windowingBtn.style.backgroundColor = '#008CBA';
+        }
+        
+        // Initial draw
+        redrawCanvas();
+    </script>
+</body>
+</html>
